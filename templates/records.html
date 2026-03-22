@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ShieldScan Records</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:Arial, sans-serif; background:#f0f4f8; }
+    .navbar {
+      background:#0C447C; padding:16px 30px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .navbar .brand { color:white; font-size:20px; font-weight:bold; }
+    .navbar a {
+      color:white; text-decoration:none; font-size:14px;
+      background:rgba(255,255,255,0.15);
+      padding:7px 16px; border-radius:8px;
+    }
+    .navbar a:hover { background:rgba(255,255,255,0.25); }
+    .container { max-width:1100px; margin:0 auto; padding:32px 24px; }
+    .page-title {
+      font-size:22px; font-weight:bold;
+      color:#0C447C; margin-bottom:24px;
+    }
+    .section { margin-bottom:36px; }
+    .section h3 {
+      font-size:16px; font-weight:bold;
+      color:#0C447C; margin-bottom:14px;
+      padding-bottom:8px;
+      border-bottom:2px solid #E6F1FB;
+    }
+    table {
+      width:100%; border-collapse:collapse;
+      background:white; border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 2px 12px rgba(0,0,0,0.06);
+    }
+    thead { background:#0C447C; }
+    thead th {
+      padding:12px 16px; text-align:left;
+      color:white; font-size:13px; font-weight:500;
+    }
+    tbody tr { border-bottom:1px solid #f0f0f0; }
+    tbody tr:hover { background:#f8fbff; }
+    tbody td {
+      padding:11px 16px;
+      font-size:13px; color:#444;
+    }
+    .badge {
+      padding:3px 10px; border-radius:20px;
+      font-size:11px; font-weight:500;
+    }
+    .badge-green  { background:#e6f4ea; color:#1e7e34; }
+    .badge-red    { background:#fdecea; color:#a32d2d; }
+    .badge-blue   { background:#E6F1FB; color:#0C447C; }
+    .badge-gray   { background:#f0f0f0; color:#666; }
+    .nav-links {
+      display:flex; gap:12px; margin-bottom:24px;
+    }
+    .nav-links a {
+      padding:9px 18px; border-radius:8px;
+      background:#0C447C; color:white;
+      text-decoration:none; font-size:13px;
+    }
+    .nav-links a:hover { background:#185FA5; }
+    .empty {
+      text-align:center; padding:24px;
+      color:#aaa; font-size:13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand">ShieldScan — Records</div>
+    <a href="/dashboard">Back to Dashboard</a>
+  </div>
+
+  <div class="container">
+    <div class="page-title">Database Records</div>
+
+<div class="nav-links">
+  <a href="#users">Registered Users</a>
+  <a href="#logins">Login History</a>
+  <a href="#visitors">Visitor Logs</a>
+  <a href="#shutdowns">Shutdown Log</a>
+  <a href="/export_excel"
+     style="background:linear-gradient(135deg,#1D9E75,#0C447C);">
+    Export to Excel
+  </a>
+  <a href="/email_settings"
+     style="background:linear-gradient(135deg,#0C447C,#534AB7);">
+    Email Settings
+  </a>
+</div>
+
+    <div class="section" id="users">
+      <h3>Registered Users</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Registered on</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td><span class="badge badge-blue">{{ user.role }}</span></td>
+            <td>{{ user.created_at.strftime("%d %b %Y, %I:%M %p") }}</td>
+            <td>
+              {% if user.is_active %}
+                <span class="badge badge-green">Active</span>
+              {% else %}
+                <span class="badge badge-gray">Inactive</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="empty">No users registered yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" id="logins">
+      <h3>Login History</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>User</th>
+            <th>Email</th>
+            <th>Login time</th>
+            <th>IP address</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logins %}
+          <tr>
+            <td>{{ log.id }}</td>
+            <td>{{ log.user.username }}</td>
+            <td>{{ log.user.email }}</td>
+            <td>{{ log.login_time.strftime("%d %b %Y, %I:%M %p") }}</td>
+            <td>{{ log.ip_address }}</td>
+            <td>
+              {% if log.status == "success" %}
+                <span class="badge badge-green">Success</span>
+              {% else %}
+                <span class="badge badge-red">Failed</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="empty">No login records yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" id="visitors">
+      <h3>Visitor Detection Logs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Detected by</th>
+            <th>Visitor name</th>
+            <th>Mask status</th>
+            <th>Confidence</th>
+            <th>Location</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in visitors %}
+          <tr>
+            <td>{{ v.id }}</td>
+            <td>{{ v.detected_by }}</td>
+            <td>{{ v.visitor_name }}</td>
+            <td>
+              {% if v.mask_status == "Mask" %}
+                <span class="badge badge-green">Mask</span>
+              {% else %}
+                <span class="badge badge-red">No Mask</span>
+              {% endif %}
+            </td>
+            <td>{{ "%.1f"|format(v.confidence) }}%</td>
+            <td>{{ v.location }}</td>
+            <td>{{ v.timestamp.strftime("%d %b %Y, %I:%M %p") }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="empty">No visitor detections logged yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+<div class="section" id="shutdowns">
+  <h3>Camera shutdown log — non-compliant users</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User</th>
+        <th>Role</th>
+        <th>No mask count</th>
+        <th>Reason</th>
+        <th>Duration</th>
+        <th>Shutdown time</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in shutdown_logs %}
+      <tr>
+        <td>{{ log.id }}</td>
+        <td><strong>{{ log.user.username }}</strong></td>
+        <td>
+          <span class="badge badge-blue">
+            {{ log.user.role }}
+          </span>
+        </td>
+        <td>
+          <span class="badge badge-red">
+            {{ log.nomask_count }} times
+          </span>
+        </td>
+        <td>{{ log.reason }}</td>
+        <td>{{ log.duration }}s</td>
+        <td>
+          {{ log.timestamp.strftime("%d %b %Y, %I:%M %p") }}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" class="empty">
+          No camera shutdowns recorded yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+  </div>
+</body>
+</html>

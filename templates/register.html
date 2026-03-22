@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ShieldScan Register</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0C447C, #1D9E75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      width: 420px;
+    }
+    .logo { text-align:center; margin-bottom:28px; }
+    .logo h2 { font-size:26px; color:#0C447C; font-weight:bold; }
+    .logo p  { color:#888; font-size:13px; margin-top:4px; }
+    label {
+      font-size:13px; color:#444;
+      display:block; margin-bottom:5px; font-weight:500;
+    }
+    input {
+      width:100%; padding:11px 14px;
+      border:1.5px solid #ddd; border-radius:8px;
+      font-size:14px; margin-bottom:18px;
+      outline:none; transition:border 0.2s;
+    }
+    input:focus { border-color:#0C447C; }
+    .register-btn {
+      width:100%; padding:14px;
+      background: linear-gradient(135deg, #0C447C, #1D9E75);
+      color:white; border:none;
+      border-radius:8px; font-size:15px;
+      cursor:pointer; font-weight:500;
+      transition:opacity 0.2s;
+      display:block; text-align:center;
+    }
+    .register-btn:hover { opacity:0.9; }
+    .alert {
+      padding:10px 14px; border-radius:8px;
+      margin-bottom:16px; font-size:13px;
+    }
+    .danger  { background:#fdecea; color:#a32d2d; }
+    .success { background:#e6f4ea; color:#1e7e34; }
+    .bottom-link {
+      text-align:center; margin-top:18px;
+      font-size:13px; color:#888;
+    }
+    .bottom-link a {
+      color:#0C447C; text-decoration:none; font-weight:500;
+    }
+    .hint {
+      font-size:11px; color:#aaa;
+      margin-top:-14px; margin-bottom:16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <h2>ShieldScan</h2>
+      <p>Create your account to get started</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="/register">
+      <label>Full name</label>
+      <input type="text" name="username"
+             placeholder="Enter your full name" required>
+
+      <label>Email address</label>
+      <input type="email" name="email"
+             placeholder="Enter your email address" required>
+
+      <label>Role</label>
+      <input type="text" name="role"
+             placeholder="e.g. Doctor, Nurse, Admin, Security" required>
+
+      <label>Password</label>
+      <input type="password" name="password"
+             placeholder="Create a strong password" required>
+      <p class="hint">Minimum 6 characters</p>
+
+      <label>Confirm password</label>
+      <input type="password" name="confirm_password"
+             placeholder="Repeat your password" required>
+
+      <button type="submit" class="register-btn">Create Account</button>
+    </form>
+
+    <div class="bottom-link">
+      Already have an account?
+      <a href="/login">Login here</a>
+    </div>
+  </div>
+</body>
+</html>

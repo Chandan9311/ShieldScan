@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ShieldScan Detection</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:Arial,sans-serif; background:#f0f4f8; }
+
+    .navbar {
+      background:#0C447C; padding:16px 30px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .navbar .brand { color:white; font-size:20px; font-weight:bold; }
+    .navbar .nav-right { display:flex; gap:12px; }
+    .navbar a {
+      color:white; text-decoration:none; font-size:13px;
+      background:rgba(255,255,255,0.15);
+      padding:7px 14px; border-radius:8px;
+    }
+    .navbar a:hover { background:rgba(255,255,255,0.25); }
+
+    .container {
+      max-width:900px;
+      margin:0 auto;
+      padding:28px 24px;
+    }
+
+    .page-title {
+      font-size:22px; font-weight:bold;
+      color:#0C447C; margin-bottom:4px;
+    }
+    .page-sub {
+      font-size:13px; color:#888; margin-bottom:20px;
+    }
+
+    .alert {
+      padding:12px 16px; border-radius:8px;
+      margin-bottom:16px; font-size:13px;
+    }
+    .success { background:#e6f4ea; color:#1e7e34; }
+    .danger  { background:#fdecea; color:#a32d2d; }
+
+    .stats-row {
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:12px; margin-bottom:20px;
+    }
+    .stat-box {
+      background:white; border-radius:12px;
+      padding:16px; text-align:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+      transition:transform 0.2s;
+    }
+    .stat-box:hover { transform:translateY(-2px); }
+    .stat-box .num {
+      font-size:26px; font-weight:bold;
+      color:#0C447C; margin-bottom:4px;
+    }
+    .stat-box .lbl { font-size:11px; color:#888; }
+    .num-green { color:#1e7e34 !important; }
+    .num-red   { color:#a32d2d !important; }
+
+    .nomask-alert {
+      display:none;
+      background:#fdecea;
+      border:2px solid #a32d2d;
+      border-radius:12px;
+      padding:12px 18px;
+      font-size:13px;
+      color:#a32d2d;
+      font-weight:500;
+      text-align:center;
+      margin-bottom:16px;
+    }
+
+    .countdown-box {
+      display:none;
+      background:#fff8e1;
+      border:2px solid #e67e22;
+      border-radius:12px;
+      padding:16px 18px;
+      margin-bottom:16px;
+    }
+    .countdown-top {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .countdown-top .msg {
+      font-size:13px;
+      font-weight:500;
+      color:#7a5c00;
+    }
+    .countdown-top .num {
+      font-size:22px;
+      font-weight:bold;
+      color:#a32d2d;
+      min-width:48px;
+      text-align:right;
+    }
+    .countdown-track {
+      background:#eee;
+      border-radius:20px;
+      height:12px;
+      overflow:hidden;
+      margin-bottom:6px;
+    }
+    .countdown-bar {
+      height:100%;
+      width:100%;
+      background:#0C447C;
+      border-radius:20px;
+      transition:width 1s linear, background 0.5s;
+    }
+    .countdown-hint {
+      font-size:11px;
+      color:#888;
+      text-align:center;
+    }
+
+    .shutdown-box {
+      display:none;
+      background:#fdecea;
+      border:2px solid #a32d2d;
+      border-radius:12px;
+      padding:24px 18px;
+      margin-bottom:16px;
+      text-align:center;
+    }
+    .shutdown-box .title {
+      font-size:18px;
+      font-weight:bold;
+      color:#a32d2d;
+      margin-bottom:8px;
+    }
+    .shutdown-box .msg {
+      font-size:13px;
+      color:#666;
+      margin-bottom:16px;
+      line-height:1.7;
+    }
+    .restart-btn {
+      padding:12px 28px;
+      background:linear-gradient(135deg,#0C447C,#1D9E75);
+      color:white; border:none;
+      border-radius:10px; font-size:14px;
+      font-weight:500; cursor:pointer;
+      transition:opacity 0.2s;
+    }
+    .restart-btn:hover { opacity:0.9; }
+
+    .detection-card {
+      background:white; border-radius:16px;
+      padding:24px;
+      box-shadow:0 2px 16px rgba(0,0,0,0.08);
+      margin-bottom:20px;
+    }
+
+    .feed-wrapper {
+      width:100%; background:#1a1a2e;
+      border-radius:12px; overflow:hidden;
+      margin-bottom:18px; min-height:400px;
+      display:flex; align-items:center;
+      justify-content:center;
+    }
+    .feed-wrapper img {
+      width:100%; border-radius:12px; display:block;
+    }
+    .feed-placeholder {
+      text-align:center; color:#666; padding:40px;
+    }
+    .feed-placeholder .icon {
+      font-size:56px; display:block; margin-bottom:14px;
+    }
+    .feed-placeholder p { font-size:14px; line-height:1.7; }
+    .feed-placeholder strong { color:#9FE1CB; }
+
+    .status-bar {
+      display:flex; justify-content:center;
+      gap:24px; margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+    .status-item {
+      display:flex; align-items:center;
+      gap:8px; font-size:13px; color:#555;
+    }
+    .dot { width:11px; height:11px; border-radius:50%; }
+    .dot-green  { background:#1e7e34; }
+    .dot-red    { background:#a32d2d; }
+    .dot-blue   { background:#0C447C; }
+    .dot-orange { background:#e67e22; }
+
+    .btn-row {
+      display:flex; gap:12px;
+      justify-content:center; flex-wrap:wrap;
+    }
+    .btn {
+      padding:13px 24px; border:none;
+      border-radius:10px; font-size:14px;
+      font-weight:500; cursor:pointer;
+      text-decoration:none; transition:opacity 0.2s;
+      display:inline-block;
+    }
+    .btn:hover { opacity:0.88; }
+    .btn-start  {
+      background:linear-gradient(135deg,#0C447C,#1D9E75);
+      color:white;
+    }
+    .btn-stop   { background:#a32d2d; color:white; }
+    .btn-reset  {
+      background:#f0f4f8; color:#0C447C;
+      border:1px solid #ddd;
+    }
+    .btn-back   {
+      background:#f0f4f8; color:#0C447C;
+      border:1px solid #ddd;
+    }
+
+    .info-box {
+      background:#E6F1FB; border-radius:12px;
+      padding:18px 22px; font-size:13px;
+      color:#444; line-height:2;
+    }
+    .info-box strong { color:#0C447C; }
+
+    .timer-badge {
+      display:inline-block;
+      background:#0C447C;
+      color:white;
+      font-size:11px;
+      padding:3px 10px;
+      border-radius:20px;
+      margin-left:8px;
+      vertical-align:middle;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="brand">ShieldScan — Live Detection</div>
+    <div class="nav-right">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/records">Records</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="page-title">
+      Real-time Face Mask Detection
+      <span class="timer-badge" id="session-badge">00:00</span>
+    </div>
+    <div class="page-sub">
+      Live webcam with automatic logging, alerts, and auto-shutdown.
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="num" id="total-faces">0</div>
+        <div class="lbl">Total detected</div>
+      </div>
+      <div class="stat-box">
+        <div class="num num-green" id="mask-count">0</div>
+        <div class="lbl">Mask compliant</div>
+      </div>
+      <div class="stat-box">
+        <div class="num num-red" id="nomask-count">0</div>
+        <div class="lbl">No mask</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" id="countdown-stat">60s</div>
+        <div class="lbl">Shutdown timer</div>
+      </div>
+    </div>
+
+    <div class="nomask-alert" id="nomask-alert">
+      No mask detected! Alert has been triggered — please wear a mask.
+    </div>
+
+    <div class="countdown-box" id="countdown-box">
+      <div class="countdown-top">
+        <div class="msg">
+          No mask detected — camera shutting down in
+        </div>
+        <div class="num" id="countdown-num">60</div>
+      </div>
+      <div class="countdown-track">
+        <div class="countdown-bar" id="countdown-bar"></div>
+      </div>
+      <div class="countdown-hint">
+        Put on a mask to reset the timer automatically
+      </div>
+    </div>
+
+    <div class="shutdown-box" id="shutdown-box">
+      <div class="title">Camera Shut Down</div>
+      <div class="msg">
+        No mask was detected for 60 seconds.<br>
+        Please wear a mask and restart the camera to continue.
+      </div>
+      <button class="restart-btn" onclick="resetAndRestart()">
+        Restart Camera
+      </button>
+    </div>
+
+    <div class="detection-card">
+
+      <div class="feed-wrapper" id="feed-wrapper">
+        <div class="feed-placeholder" id="placeholder">
+          <span class="icon">&#128247;</span>
+          <p>Click <strong>Start Camera</strong> to begin<br>
+             real-time face mask detection</p>
+        </div>
+        <img id="video-feed" src="" alt="Live Feed"
+             style="display:none;" width="100%">
+      </div>
+
+      <div class="status-bar">
+        <div class="status-item">
+          <div class="dot dot-blue"></div>
+          System ready
+        </div>
+        <div class="status-item">
+          <div class="dot dot-green"></div>
+          Mask detected
+        </div>
+        <div class="status-item">
+          <div class="dot dot-red"></div>
+          No mask detected
+        </div>
+        <div class="status-item">
+          <div class="dot dot-orange"></div>
+          Shutdown warning
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-start" id="start-btn"
+                onclick="startCamera()">
+          Start Camera
+        </button>
+        <button class="btn btn-stop" id="stop-btn"
+                onclick="stopCamera()"
+                style="display:none;">
+          Stop Camera
+        </button>
+        <button class="btn btn-reset" onclick="resetStats()">
+          Reset Counter
+        </button>
+        <a href="/dashboard" class="btn btn-back">
+          Dashboard
+        </a>
+      </div>
+
+    </div>
+
+    <div class="info-box">
+      <strong>Features active in this session:</strong><br>
+      - <strong>Multiple faces</strong> detected simultaneously in one frame<br>
+      - <strong>Alert beep</strong> plays automatically when no mask is detected<br>
+      - <strong>Auto logging</strong> saves every detection to the database<br>
+      - <strong>Live counters</strong> update every second above the feed<br>
+      - <strong>Countdown timer</strong> starts when no mask is detected<br>
+      - <strong>Auto shutdown</strong> after 60 seconds of no mask — camera turns off<br>
+      - <strong>Restart button</strong> reactivates the camera after shutdown
+    </div>
+
+  </div>
+
+  <script>
+    let sessionTimer   = null;
+    let statsTimer     = null;
+    let sessionSeconds = 0;
+    let cameraActive   = false;
+
+    function startCamera() {
+      const feed        = document.getElementById("video-feed");
+      const placeholder = document.getElementById("placeholder");
+      const startBtn    = document.getElementById("start-btn");
+      const stopBtn     = document.getElementById("stop-btn");
+
+      feed.src           = "/video_feed";
+      feed.style.display = "block";
+      placeholder.style.display = "none";
+      startBtn.style.display    = "none";
+      stopBtn.style.display     = "inline-block";
+      cameraActive = true;
+
+      sessionSeconds = 0;
+      sessionTimer   = setInterval(updateTimer, 1000);
+      statsTimer     = setInterval(fetchStats,  1000);
+    }
+
+    function stopCamera() {
+      const feed        = document.getElementById("video-feed");
+      const placeholder = document.getElementById("placeholder");
+      const startBtn    = document.getElementById("start-btn");
+      const stopBtn     = document.getElementById("stop-btn");
+
+      feed.src           = "";
+      feed.style.display = "none";
+      placeholder.style.display = "flex";
+      startBtn.style.display    = "inline-block";
+      stopBtn.style.display     = "none";
+      cameraActive = false;
+
+      clearInterval(sessionTimer);
+      clearInterval(statsTimer);
+    }
+
+    function updateTimer() {
+      sessionSeconds++;
+      const m = String(Math.floor(sessionSeconds / 60)).padStart(2,"0");
+      const s = String(sessionSeconds % 60).padStart(2,"0");
+      const timeStr = `${m}:${s}`;
+      document.getElementById("session-badge").textContent = timeStr;
+    }
+
+    function fetchStats() {
+      fetch("/session_stats")
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById("mask-count").textContent   = data.mask_count;
+          document.getElementById("nomask-count").textContent = data.nomask_count;
+          document.getElementById("total-faces").textContent  = data.total_faces;
+
+          const alertBox    = document.getElementById("nomask-alert");
+          const countdownBox = document.getElementById("countdown-box");
+          const shutdownBox  = document.getElementById("shutdown-box");
+          const countdownNum = document.getElementById("countdown-num");
+          const countdownBar = document.getElementById("countdown-bar");
+          const countdownStat = document.getElementById("countdown-stat");
+
+          if (data.shutdown) {
+            shutdownBox.style.display   = "block";
+            countdownBox.style.display  = "none";
+            alertBox.style.display      = "none";
+            countdownStat.textContent   = "OFF";
+            countdownStat.style.color   = "#a32d2d";
+            stopCamera();
+          } else if (data.nomask_count > 0 && data.countdown < 60) {
+            alertBox.style.display      = "block";
+            countdownBox.style.display  = "block";
+            shutdownBox.style.display   = "none";
+
+            countdownNum.textContent    = data.countdown;
+            countdownStat.textContent   = data.countdown + "s";
+
+            const pct = (data.countdown / 60) * 100;
+            countdownBar.style.width    = pct + "%";
+
+            if (data.countdown <= 10) {
+              countdownBar.style.background = "#a32d2d";
+              countdownStat.style.color     = "#a32d2d";
+              countdownNum.style.color      = "#a32d2d";
+            } else if (data.countdown <= 30) {
+              countdownBar.style.background = "#e67e22";
+              countdownStat.style.color     = "#e67e22";
+              countdownNum.style.color      = "#e67e22";
+            } else {
+              countdownBar.style.background = "#0C447C";
+              countdownStat.style.color     = "#0C447C";
+              countdownNum.style.color      = "#a32d2d";
+            }
+          } else {
+            alertBox.style.display      = "none";
+            countdownBox.style.display  = "none";
+            shutdownBox.style.display   = "none";
+            countdownStat.textContent   = "60s";
+            countdownStat.style.color   = "#0C447C";
+          }
+        })
+        .catch(() => {});
+    }
+
+    function resetStats() {
+      fetch("/reset_stats")
+        .then(() => {
+          document.getElementById("mask-count").textContent    = "0";
+          document.getElementById("nomask-count").textContent  = "0";
+          document.getElementById("total-faces").textContent   = "0";
+          document.getElementById("countdown-stat").textContent = "60s";
+          document.getElementById("countdown-stat").style.color = "#0C447C";
+          document.getElementById("nomask-alert").style.display  = "none";
+          document.getElementById("countdown-box").style.display = "none";
+          document.getElementById("shutdown-box").style.display  = "none";
+          sessionSeconds = 0;
+          document.getElementById("session-badge").textContent  = "00:00";
+        });
+    }
+
+    function resetAndRestart() {
+      fetch("/reset_stats")
+        .then(() => {
+          document.getElementById("shutdown-box").style.display  = "none";
+          document.getElementById("countdown-box").style.display = "none";
+          document.getElementById("nomask-alert").style.display  = "none";
+          document.getElementById("mask-count").textContent      = "0";
+          document.getElementById("nomask-count").textContent    = "0";
+          document.getElementById("total-faces").textContent     = "0";
+          document.getElementById("countdown-stat").textContent  = "60s";
+          document.getElementById("countdown-stat").style.color  = "#0C447C";
+          sessionSeconds = 0;
+          document.getElementById("session-badge").textContent   = "00:00";
+          startCamera();
+        });
+    }
+  </script>
+
+</body>
+</html>

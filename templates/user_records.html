@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Records — ShieldScan</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:Arial,sans-serif; background:#f0f4f8; }
+    .navbar {
+      background:#0C447C; padding:16px 30px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .navbar .brand { color:white; font-size:20px; font-weight:bold; }
+    .navbar .nav-right { display:flex; gap:10px; }
+    .navbar a {
+      color:white; text-decoration:none; font-size:13px;
+      background:rgba(255,255,255,0.15);
+      padding:7px 14px; border-radius:8px;
+    }
+    .navbar a:hover { background:rgba(255,255,255,0.25); }
+    .container { max-width:1000px; margin:0 auto; padding:32px 24px; }
+    .page-title {
+      font-size:22px; font-weight:bold;
+      color:#0C447C; margin-bottom:20px;
+    }
+    .nav-links { display:flex; gap:10px; margin-bottom:20px; }
+    .nav-links a {
+      padding:9px 18px; border-radius:8px;
+      background:#0C447C; color:white;
+      text-decoration:none; font-size:13px;
+    }
+    .nav-links a:hover { background:#185FA5; }
+    .section { margin-bottom:32px; }
+    .section h3 {
+      font-size:15px; font-weight:bold;
+      color:#0C447C; margin-bottom:12px;
+      padding-bottom:8px;
+      border-bottom:2px solid #E6F1FB;
+    }
+    table {
+      width:100%; border-collapse:collapse;
+      background:white; border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+    }
+    thead { background:#0C447C; }
+    thead th {
+      padding:12px 16px; text-align:left;
+      color:white; font-size:13px; font-weight:500;
+    }
+    tbody tr { border-bottom:1px solid #f0f0f0; }
+    tbody tr:hover { background:#f8fbff; }
+    tbody td { padding:11px 16px; font-size:13px; color:#444; }
+    .badge {
+      padding:3px 10px; border-radius:20px;
+      font-size:11px; font-weight:500;
+    }
+    .badge-green { background:#e6f4ea; color:#1e7e34; }
+    .badge-red   { background:#fdecea; color:#a32d2d; }
+    .badge-blue  { background:#E6F1FB; color:#0C447C; }
+    .empty { text-align:center; color:#aaa; padding:20px; font-size:13px; }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="brand">ShieldScan — My Records</div>
+    <div class="nav-right">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/detect">Detection</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-title">My Records — {{ username }}</div>
+
+    <div class="nav-links">
+      <a href="#logins">My Login History</a>
+      <a href="#detections">My Detections</a>
+    </div>
+
+    <div class="section" id="logins">
+      <h3>My Login History</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Login time</th>
+            <th>IP address</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in my_logins %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ log.login_time.strftime("%d %b %Y, %I:%M %p") }}</td>
+            <td>{{ log.ip_address }}</td>
+            <td>
+              {% if log.status == "success" %}
+                <span class="badge badge-green">Success</span>
+              {% else %}
+                <span class="badge badge-red">Failed</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="empty">No login records yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" id="detections">
+      <h3>My Detection Logs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Mask status</th><th>Confidence</th>
+            <th>Location</th><th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in my_visitors %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>
+              {% if v.mask_status == "Mask" %}
+                <span class="badge badge-green">Mask</span>
+              {% else %}
+                <span class="badge badge-red">No Mask</span>
+              {% endif %}
+            </td>
+            <td>{{ "%.1f"|format(v.confidence) }}%</td>
+            <td>{{ v.location }}</td>
+            <td>{{ v.timestamp.strftime("%d %b %Y, %I:%M %p") }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="empty">
+              No detection records yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>

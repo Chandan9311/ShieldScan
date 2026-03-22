@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ShieldScan Admin</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:Arial,sans-serif; background:#f0f4f8; }
+    .navbar {
+      background:#3C3489; padding:16px 30px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .navbar .brand { color:white; font-size:20px; font-weight:bold; }
+    .navbar .badge {
+      background:#7F77DD; color:white; font-size:11px;
+      padding:3px 10px; border-radius:20px; margin-left:8px;
+    }
+    .navbar .nav-right {
+      display:flex; gap:10px; align-items:center;
+    }
+    .navbar .user-label { color:#AFA9EC; font-size:13px; }
+    .navbar a {
+      color:white; text-decoration:none; font-size:13px;
+      background:rgba(255,255,255,0.15);
+      padding:7px 14px; border-radius:8px;
+    }
+    .navbar a:hover { background:rgba(255,255,255,0.25); }
+    .container {
+      max-width:1100px; margin:0 auto; padding:32px 24px;
+    }
+    .alert {
+      padding:12px 16px; border-radius:8px;
+      margin-bottom:16px; font-size:13px;
+    }
+    .success { background:#e6f4ea; color:#1e7e34; }
+    .danger  { background:#fdecea; color:#a32d2d; }
+    .welcome {
+      background:linear-gradient(135deg,#3C3489,#534AB7);
+      border-radius:16px; padding:28px;
+      color:white; margin-bottom:24px;
+    }
+    .welcome h2 { font-size:22px; margin-bottom:6px; }
+    .welcome p  { font-size:13px; opacity:0.85; line-height:1.7; }
+    .stats-grid {
+      display:grid;
+      grid-template-columns:repeat(6, minmax(0,1fr));
+      gap:12px; margin-bottom:24px;
+    }
+    .stat {
+      background:white; border-radius:12px;
+      padding:16px; text-align:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+      transition:transform 0.2s;
+    }
+    .stat:hover { transform:translateY(-2px); }
+    .stat .num {
+      font-size:24px; font-weight:bold;
+      color:#3C3489; margin-bottom:4px;
+    }
+    .stat .lbl { font-size:11px; color:#888; }
+    .num-green  { color:#1e7e34 !important; }
+    .num-red    { color:#a32d2d !important; }
+    .num-purple { color:#3C3489 !important; }
+    .section-title {
+      font-size:15px; font-weight:bold;
+      color:#3C3489; margin-bottom:12px;
+      padding-bottom:8px;
+      border-bottom:2px solid #EEEDFE;
+    }
+    .action-grid {
+      display:grid;
+      grid-template-columns:repeat(5, minmax(0,1fr));
+      gap:12px; margin-bottom:24px;
+    }
+    .action-card {
+      background:white; border-radius:12px;
+      padding:18px; text-align:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+      text-decoration:none;
+      transition:transform 0.2s;
+    }
+    .action-card:hover { transform:translateY(-3px); }
+    .action-card .icon {
+      font-size:26px; display:block; margin-bottom:8px;
+    }
+    .action-card h3 {
+      font-size:13px; color:#3C3489; margin-bottom:4px;
+    }
+    .action-card p { font-size:11px; color:#888; }
+    .table-card {
+      background:white; border-radius:12px; padding:20px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+      margin-bottom:20px;
+    }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead th {
+      text-align:left; padding:8px 12px;
+      color:#888; font-weight:500;
+      border-bottom:1px solid #f0f0f0;
+    }
+    tbody td {
+      padding:10px 12px; color:#444;
+      border-bottom:1px solid #f8f8f8;
+    }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover { background:#f8f8ff; }
+    .badge {
+      padding:3px 10px; border-radius:20px;
+      font-size:11px; font-weight:500;
+    }
+    .badge-green  { background:#e6f4ea; color:#1e7e34; }
+    .badge-red    { background:#fdecea; color:#a32d2d; }
+    .badge-purple { background:#EEEDFE; color:#3C3489; }
+    .badge-gray   { background:#f0f0f0; color:#666; }
+    .badge-amber  { background:#FAEEDA; color:#633806; }
+    .empty {
+      text-align:center; color:#aaa;
+      padding:24px; font-size:13px;
+    }
+    .shutdown-header {
+      display:flex; justify-content:space-between;
+      align-items:center; margin-bottom:12px;
+      padding-bottom:8px;
+      border-bottom:2px solid #fdecea;
+    }
+    .shutdown-header .title {
+      font-size:15px; font-weight:bold; color:#a32d2d;
+    }
+    .shutdown-header .count {
+      background:#fdecea; color:#a32d2d;
+      padding:4px 14px; border-radius:20px;
+      font-size:13px; font-weight:500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="brand">
+      ShieldScan
+      <span class="badge">Admin Panel</span>
+    </div>
+    <div class="nav-right">
+      <span class="user-label">{{ username }}</span>
+      <a href="/detect">Detection</a>
+      <a href="/records">Records</a>
+      <a href="/manage_users">Users</a>
+      <a href="/email_settings">Email</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="welcome">
+      <h2>Admin Dashboard</h2>
+      <p>
+        Full system overview — all users, detections,
+        shutdowns, and records.
+      </p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="num">{{ total_users }}</div>
+        <div class="lbl">Total users</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ total_logins }}</div>
+        <div class="lbl">Total logins</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ total_visitors }}</div>
+        <div class="lbl">Detections</div>
+      </div>
+      <div class="stat">
+        <div class="num num-green">{{ mask_ok }}</div>
+        <div class="lbl">Mask compliant</div>
+      </div>
+      <div class="stat">
+        <div class="num num-red">{{ no_mask }}</div>
+        <div class="lbl">No mask found</div>
+      </div>
+      <div class="stat">
+        <div class="num num-red">{{ total_shutdowns }}</div>
+        <div class="lbl">Camera shutdowns</div>
+      </div>
+    </div>
+
+    <div class="section-title">Admin actions</div>
+    <div class="action-grid">
+      <a href="/detect" class="action-card">
+        <span class="icon">&#128247;</span>
+        <h3>Start detection</h3>
+        <p>Launch live webcam</p>
+      </a>
+      <a href="/records" class="action-card">
+        <span class="icon">&#128202;</span>
+        <h3>All records</h3>
+        <p>Full database view</p>
+      </a>
+      <a href="/manage_users" class="action-card">
+        <span class="icon">&#128101;</span>
+        <h3>Manage users</h3>
+        <p>Activate, promote, delete</p>
+      </a>
+      <a href="/export_excel" class="action-card">
+        <span class="icon">&#128196;</span>
+        <h3>Export Excel</h3>
+        <p>Download all records</p>
+      </a>
+      <a href="/email_settings" class="action-card">
+        <span class="icon">&#128140;</span>
+        <h3>Email settings</h3>
+        <p>Configure alerts</p>
+      </a>
+    </div>
+
+    <div class="table-card">
+      <div class="section-title">Recent logins — all users</div>
+      <table>
+        <thead>
+          <tr>
+            <th>User</th><th>Role</th>
+            <th>Time</th><th>IP</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent_logins %}
+          <tr>
+            <td><strong>{{ log.user.username }}</strong></td>
+            <td>
+              <span class="badge badge-purple">
+                {{ log.user.role }}
+              </span>
+            </td>
+            <td>
+              {{ log.login_time.strftime("%d %b %Y, %I:%M %p") }}
+            </td>
+            <td>{{ log.ip_address }}</td>
+            <td>
+              {% if log.status == "success" %}
+                <span class="badge badge-green">Success</span>
+              {% else %}
+                <span class="badge badge-red">Failed</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="empty">
+              No login records yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="section-title">
+        Recent detections — all users
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Detected by</th><th>Mask status</th>
+            <th>Confidence</th><th>Location</th><th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in recent_visitors %}
+          <tr>
+            <td>{{ v.detected_by }}</td>
+            <td>
+              {% if v.mask_status == "Mask" %}
+                <span class="badge badge-green">Mask</span>
+              {% else %}
+                <span class="badge badge-red">No Mask</span>
+              {% endif %}
+            </td>
+            <td>{{ "%.1f"|format(v.confidence) }}%</td>
+            <td>{{ v.location }}</td>
+            <td>
+              {{ v.timestamp.strftime("%d %b %Y, %I:%M %p") }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="empty">
+              No detections yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="shutdown-header">
+        <div class="title">
+          Camera shutdown log — non-compliant users
+        </div>
+        <div class="count">
+          {{ total_shutdowns }} shutdown(s) recorded
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>User</th><th>Role</th>
+            <th>No mask count</th><th>Reason</th>
+            <th>Shutdown time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in shutdown_logs %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><strong>{{ log.user.username }}</strong></td>
+            <td>
+              <span class="badge badge-purple">
+                {{ log.user.role }}
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-red">
+                {{ log.nomask_count }} times
+              </span>
+            </td>
+            <td>{{ log.reason }}</td>
+            <td>
+              {{ log.timestamp.strftime("%d %b %Y, %I:%M %p") }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="empty">
+              No camera shutdowns recorded yet.
+              All users are mask compliant.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>

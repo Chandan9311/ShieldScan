@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ShieldScan Dashboard</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:Arial,sans-serif; background:#f0f4f8; }
+    .navbar {
+      background:#0C447C; padding:16px 30px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .navbar .brand { color:white; font-size:20px; font-weight:bold; }
+    .navbar .nav-right { display:flex; gap:10px; align-items:center; }
+    .navbar .user-name { color:#9FE1CB; font-size:13px; }
+    .navbar a {
+      color:white; text-decoration:none; font-size:13px;
+      background:rgba(255,255,255,0.15);
+      padding:7px 14px; border-radius:8px;
+    }
+    .navbar a:hover { background:rgba(255,255,255,0.25); }
+    .container { max-width:900px; margin:0 auto; padding:32px 24px; }
+    .welcome {
+      background:linear-gradient(135deg,#0C447C,#1D9E75);
+      border-radius:16px; padding:28px;
+      color:white; margin-bottom:24px;
+    }
+    .welcome h2 { font-size:22px; margin-bottom:6px; }
+    .welcome p  { font-size:13px; opacity:0.85; line-height:1.7; }
+    .role-badge {
+      display:inline-block; margin-top:10px;
+      background:rgba(255,255,255,0.2);
+      padding:4px 14px; border-radius:20px; font-size:12px;
+    }
+    .stats-grid {
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:12px; margin-bottom:24px;
+    }
+    .stat {
+      background:white; border-radius:12px;
+      padding:18px; text-align:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+    }
+    .stat .num {
+      font-size:26px; font-weight:bold;
+      color:#0C447C; margin-bottom:4px;
+    }
+    .stat .lbl { font-size:11px; color:#888; }
+    .num-green { color:#1e7e34 !important; }
+    .num-red   { color:#a32d2d !important; }
+    .section-title {
+      font-size:15px; font-weight:bold;
+      color:#0C447C; margin-bottom:12px;
+      padding-bottom:8px;
+      border-bottom:2px solid #E6F1FB;
+    }
+    .action-grid {
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:12px; margin-bottom:24px;
+    }
+    .action-card {
+      background:white; border-radius:12px;
+      padding:24px; text-align:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+      text-decoration:none;
+      transition:transform 0.2s;
+    }
+    .action-card:hover { transform:translateY(-3px); }
+    .action-card .icon { font-size:32px; display:block; margin-bottom:10px; }
+    .action-card h3 { font-size:15px; color:#0C447C; margin-bottom:6px; }
+    .action-card p  { font-size:12px; color:#888; line-height:1.6; }
+    .table-card {
+      background:white; border-radius:12px;
+      padding:20px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
+      margin-bottom:20px;
+    }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead th {
+      text-align:left; padding:8px 12px;
+      color:#888; font-weight:500;
+      border-bottom:1px solid #f0f0f0;
+    }
+    tbody td {
+      padding:10px 12px; color:#444;
+      border-bottom:1px solid #f8f8f8;
+    }
+    tbody tr:hover { background:#f8fbff; }
+    .badge {
+      padding:3px 10px; border-radius:20px;
+      font-size:11px; font-weight:500;
+    }
+    .badge-green { background:#e6f4ea; color:#1e7e34; }
+    .badge-red   { background:#fdecea; color:#a32d2d; }
+    .empty { text-align:center; color:#aaa; padding:20px; }
+    .alert {
+      padding:12px 16px; border-radius:8px;
+      margin-bottom:16px; font-size:13px;
+    }
+    .success { background:#e6f4ea; color:#1e7e34; }
+    .danger  { background:#fdecea; color:#a32d2d; }
+    .restricted-box {
+      background:#f8f8f8; border-radius:12px;
+      padding:20px; text-align:center;
+      color:#aaa; font-size:13px;
+      border:1px dashed #ddd;
+      margin-bottom:20px;
+    }
+    .restricted-box .icon { font-size:32px; display:block; margin-bottom:8px; }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="brand">ShieldScan</div>
+    <div class="nav-right">
+      <span class="user-name">{{ role }} — {{ username }}</span>
+      <a href="/detect">Detection</a>
+      <a href="/my_records">My Records</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="welcome">
+      <h2>Hello, {{ username }}!</h2>
+      <p>Welcome to ShieldScan. Start the camera to begin<br>
+         real-time face mask detection.</p>
+      <span class="role-badge">{{ role }}</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="num">{{ my_detections }}</div>
+        <div class="lbl">My detections</div>
+      </div>
+      <div class="stat">
+        <div class="num num-green">{{ my_mask_ok }}</div>
+        <div class="lbl">Mask compliant</div>
+      </div>
+      <div class="stat">
+        <div class="num num-red">{{ my_no_mask }}</div>
+        <div class="lbl">No mask found</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ my_logins }}</div>
+        <div class="lbl">My logins</div>
+      </div>
+    </div>
+
+    <div class="section-title">Quick actions</div>
+    <div class="action-grid">
+      <a href="/detect" class="action-card">
+        <span class="icon">&#128247;</span>
+        <h3>Start detection</h3>
+        <p>Launch real-time webcam face mask detection.</p>
+      </a>
+      <a href="/my_records" class="action-card">
+        <span class="icon">&#128202;</span>
+        <h3>My records</h3>
+        <p>View your own detection logs and login history.</p>
+      </a>
+    </div>
+
+    <div class="restricted-box">
+      <span class="icon">&#128274;</span>
+      Admin features like user management, full records,
+      Excel export, and email settings are only visible
+      to administrators.
+    </div>
+
+    <div class="table-card">
+      <div class="section-title">My recent detections</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Mask status</th><th>Confidence</th>
+            <th>Location</th><th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in recent_my_logs %}
+          <tr>
+            <td>
+              {% if v.mask_status == "Mask" %}
+                <span class="badge badge-green">Mask</span>
+              {% else %}
+                <span class="badge badge-red">No Mask</span>
+              {% endif %}
+            </td>
+            <td>{{ "%.1f"|format(v.confidence) }}%</td>
+            <td>{{ v.location }}</td>
+            <td>{{ v.timestamp.strftime("%d %b %Y, %I:%M %p") }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="empty">
+              No detections yet — start the camera to log results.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>
