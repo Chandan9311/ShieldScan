@@ -410,7 +410,20 @@ def generate_frames(user_id=1):
     cap.set(cv2.CAP_PROP_FPS,          30)
 
     if not cap.isOpened():
-        print("Error: Could not open webcam!")
+        print("Error: Could not open webcam (serverless/headless host).")
+        img = np.zeros((480, 640, 3), np.uint8)
+        cv2.putText(img, "Webcam capture requires local client environment.", (30, 220),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(img, "Serverless Vercel cloud instances do not have direct webcam hardware.", (15, 260),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 200, 255), 1)
+        ret, buffer = cv2.imencode(".jpg", img)
+        if ret:
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" +
+                buffer.tobytes() +
+                b"\r\n"
+            )
         return
 
     print("Webcam started!")

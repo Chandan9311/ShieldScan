@@ -15,8 +15,10 @@ from openpyxl.utils import get_column_letter
 app = Flask(__name__)
 
 # ── Core config ────────────────────────────────────────────
-app.config["SECRET_KEY"]                     = "shieldscan_secret_2024"
-app.config["SQLALCHEMY_DATABASE_URI"]        = "sqlite:///shieldscan.db"
+app.config["SECRET_KEY"]                     = os.environ.get("SECRET_KEY", "shieldscan_secret_2024")
+db_dir = "/tmp" if os.environ.get("VERCEL") or not os.access(os.getcwd(), os.W_OK) else os.getcwd()
+os.makedirs(db_dir, exist_ok=True)
+app.config["SQLALCHEMY_DATABASE_URI"]        = f"sqlite:///{os.path.join(db_dir, 'shieldscan.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ── Email config ───────────────────────────────────────────
