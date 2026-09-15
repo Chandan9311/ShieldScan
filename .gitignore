@@ -1,6 +1,3 @@
-# Model file (too large for GitHub)
-shieldscan_model.h5
-
 # Database
 *.db
 instance/
