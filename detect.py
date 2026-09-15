@@ -1,8 +1,5 @@
 import cv2
 import numpy as np
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import os
 import collections
 import threading
@@ -29,18 +26,31 @@ def play_shutdown_alert():
     except Exception as e:
         print(f"Shutdown alert error: {e}")
 
-# ── Load model ─────────────────────────────────────────────
-print("Loading ShieldScan model...")
-model = load_model(os.path.join(BASE_DIR, "shieldscan_model.h5"))
-print("Model loaded!")
+# ── Load model safely ─────────────────────────────────────
+model = None
+try:
+    from tensorflow.keras.models import load_model
+    from tensorflow.keras.preprocessing.image import img_to_array
+    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+    model_path = os.path.join(BASE_DIR, "shieldscan_model.h5")
+    if os.path.exists(model_path):
+        print("Loading ShieldScan model...")
+        model = load_model(model_path)
+        print("Model loaded!")
+except Exception as e:
+    print(f"TensorFlow / model loading notice: {e}")
 
-# ── Load DNN face detector ─────────────────────────────────
-prototxt   = os.path.join(BASE_DIR, "deploy.prototxt")
-caffemodel = os.path.join(BASE_DIR,
-             "res10_300x300_ssd_iter_140000.caffemodel")
-print("Loading face detector...")
-net = cv2.dnn.readNet(prototxt, caffemodel)
-print("Face detector loaded!")
+# ── Load DNN face detector safely ──────────────────────────
+net = None
+try:
+    prototxt   = os.path.join(BASE_DIR, "deploy.prototxt")
+    caffemodel = os.path.join(BASE_DIR, "res10_300x300_ssd_iter_140000.caffemodel")
+    if os.path.exists(prototxt) and os.path.exists(caffemodel):
+        print("Loading face detector...")
+        net = cv2.dnn.readNet(prototxt, caffemodel)
+        print("Face detector loaded!")
+except Exception as e:
+    print(f"Face detector loading notice: {e}")
 
 # ── Smoothing ──────────────────────────────────────────────
 SMOOTH_FRAMES = 8
@@ -73,6 +83,8 @@ _active_face_ids = {}
 # ──────────────────────────────────────────────────────────
 
 def get_face_regions(frame):
+    if net is None:
+        return []
     h, w = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(
         cv2.resize(frame, (300, 300)),
@@ -119,16 +131,19 @@ def get_face_regions(frame):
 # ──────────────────────────────────────────────────────────
 
 def predict_mask(face_img):
-    try:
-        face_img = cv2.resize(face_img, (224, 224))
-        face_img = img_to_array(face_img)
-        face_img = preprocess_input(face_img)
-        face_img = np.expand_dims(face_img, axis=0)
-        preds    = model.predict(face_img, verbose=0)[0]
-        return preds
-    except Exception as e:
-        print(f"Prediction error: {e}")
-        return np.array([1.0, 0.0])
+    if model is not None:
+        try:
+            from tensorflow.keras.preprocessing.image import img_to_array
+            from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+            face_img = cv2.resize(face_img, (224, 224))
+            face_img = img_to_array(face_img)
+            face_img = preprocess_input(face_img)
+            face_img = np.expand_dims(face_img, axis=0)
+            preds    = model.predict(face_img, verbose=0)[0]
+            return preds
+        except Exception as e:
+            print(f"Prediction error: {e}")
+    return np.array([1.0, 0.0])
 
 # ──────────────────────────────────────────────────────────
 #  SMOOTHING & FACE TRACKING
